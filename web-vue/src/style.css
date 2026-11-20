@@ -761,23 +761,41 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.32); }
 .scan-reply svg { flex-shrink: 0; margin-top: 2px; color: #AF52DE; }
 
 /* ---------- Notifikasi versi ringkas (menimpa ukuran di atas) ---------- */
-.nc { width: min(400px, 100%); gap: 6px; padding-left: 8px; padding-right: 8px; }
-.nc-list { gap: 6px; }
-.nc-head { padding: 5px 5px 5px 14px; border-radius: 16px; }
-.nc-head h2 { font-size: 16px; font-weight: 600; letter-spacing: -0.01em; }
-.nc-close { min-height: 28px; padding: 0 12px; font-size: 13px; border-radius: 14px; }
-.nc-card { gap: 10px; padding: 9px 12px; border-radius: 18px; }
-.nc-card .app-glyph { width: 30px; height: 30px; border-radius: 8px; }
-.nc-card .app-glyph svg { width: 16px; height: 16px; }
-.nc-text { font-size: 13.5px; line-height: 1.3; }
-.nc-text strong { font-size: 14px; }
-.nc-meta { font-size: 11.5px; }
-.nc-action { margin-top: 6px; min-height: 28px; padding: 0 12px; font-size: 13px; border-radius: 14px; }
+.nc { width: min(360px, 100%); gap: 5px; padding-left: 8px; padding-right: 8px; }
+.nc-list { display: flex; flex-direction: column; gap: 5px; }
+.nc-head { padding: 4px 4px 4px 12px; border-radius: 14px; }
+.nc-head h2 { font-size: 14px; font-weight: 600; letter-spacing: -0.01em; }
+.nc-head-actions { display: flex; gap: 4px; }
+.nc-close, .nc-clear { min-height: 26px; padding: 0 10px; font-size: 12px; border-radius: 13px; }
+.nc-clear { border: 0; background: rgba(255, 59, 48, 0.12); color: #D70015; font-weight: 600; cursor: pointer; }
 
-.banners { width: min(380px, calc(100% - 16px)); gap: 6px; }
-.banner-ios { border-radius: 18px; }
-.banner-hit { gap: 10px; padding: 9px 12px; }
-.banner-hit .app-glyph { width: 30px; height: 30px; border-radius: 8px; }
-.banner-hit .app-glyph svg { width: 16px; height: 16px; }
-.banner-text { font-size: 13.5px; line-height: 1.3; }
-.banner-top { font-size: 11.5px; }
+.nc-card {
+  position: relative; gap: 8px; padding: 7px 30px 7px 9px; border-radius: 15px; align-items: center;
+  touch-action: pan-y; cursor: grab;
+}
+.nc-main { flex: 1; min-width: 0; display: flex; gap: 8px; align-items: center; border: 0; background: none; padding: 0; text-align: left; font: inherit; color: inherit; cursor: pointer; }
+.nc-card .app-glyph { width: 24px; height: 24px; border-radius: 6px; }
+.nc-text { font-size: 12px; line-height: 1.25; gap: 0; }
+.nc-text strong { font-size: 12.5px; }
+.nc-text > span:last-child:not(.nc-meta) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nc-meta { font-size: 10.5px; }
+.nc-action { margin-top: 4px; min-height: 24px; padding: 0 10px; font-size: 11.5px; border-radius: 12px; }
+.nc-x {
+  position: absolute; top: 50%; right: 6px; transform: translateY(-50%);
+  width: 20px; height: 20px; border-radius: 50%; border: 0; padding: 0; cursor: pointer;
+  display: grid; place-items: center; background: var(--fill); color: var(--label2);
+}
+.nc-x::before { content: ""; position: absolute; inset: -10px; } /* area sentuh lebih besar dari ikonnya */
+.nc-x:hover { background: var(--fill2); color: var(--label); }
+.nc-empty { padding-right: 9px; cursor: default; }
+.nc-tip { text-align: center; font-size: 11px; color: rgba(255, 255, 255, 0.85); margin-top: 2px; }
+
+.banners { width: min(360px, calc(100% - 16px)); gap: 5px; }
+.banner-ios { position: relative; border-radius: 15px; }
+.banner-hit { gap: 8px; padding: 7px 32px 7px 9px; align-items: center; }
+.banner-hit .app-glyph { width: 24px; height: 24px; border-radius: 6px; }
+.banner-hit .app-glyph svg { width: 14px; height: 14px; }
+.banner-text { font-size: 12px; line-height: 1.25; gap: 0; }
+.banner-text strong { font-size: 12.5px; }
+.banner-top { font-size: 10.5px; }
+.banner-x { right: 7px; }

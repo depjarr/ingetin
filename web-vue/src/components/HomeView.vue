@@ -8,6 +8,7 @@ import { categorize } from "../lib/categories";
 import { signOutSafely } from "../lib/push";
 import { clearHistory } from "../lib/chat";
 import { showBanner, confirmDialog, alertDialog, actionSheet } from "../lib/ui";
+import { isDismissed, noteKey } from "../lib/dismissed";
 import AppIcon from "./AppIcon.vue";
 import TabBar from "./TabBar.vue";
 import DashboardScreen from "./DashboardScreen.vue";
@@ -37,7 +38,8 @@ watch(screen, () => window.scrollTo({ top: 0 }));
 
 const TITLES = { chat: "Asisten" };
 const summary = computed(() => summarize(items.value));
-const alertCount = computed(() => items.value.filter((i) => daysUntil(i.due_date) <= 7).length);
+// Jumlah di lonceng: yang perlu perhatian dan belum dihapus dari pusat notifikasi
+const alertCount = computed(() => items.value.filter((i) => daysUntil(i.due_date) <= 7 && !isDismissed(noteKey(i))).length);
 
 async function loadItems() {
   loading.value = true;
@@ -117,7 +119,7 @@ function greetWithBanner() {
   try { if (sessionStorage.getItem(KEY)) return; sessionStorage.setItem(KEY, "1"); } catch { /* abaikan */ }
   const urgent = items.value
     .map((i) => ({ ...i, days: daysUntil(i.due_date) }))
-    .filter((i) => i.days <= 3)
+    .filter((i) => i.days <= 3 && !isDismissed(noteKey(i))) // yang sudah dihapus user tidak muncul lagi
     .sort((a, b) => a.days - b.days)[0];
   if (!urgent) return;
   const cat = categorize(urgent);

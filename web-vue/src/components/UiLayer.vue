@@ -56,6 +56,7 @@ const SPRING = { type: "spring", stiffness: 420, damping: 32, mass: 0.9 };
               <span v-if="b.body" class="banner-body">{{ b.body }}</span>
             </span>
           </button>
+          <button class="nc-x banner-x" aria-label="Tutup notifikasi" @click="dismissBanner(b.id)"><AppIcon name="x" :size="12" /></button>
         </motion.div>
       </AnimatePresence>
     </div>
