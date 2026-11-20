@@ -7,7 +7,9 @@ export const ATTACHMENT_TYPES = ["image/jpeg", "image/png", "image/webp", "image
 
 export const MAX_HISTORY = 20; // jumlah pesan terakhir yang dikirim ke model
 export const MAX_TEXT = 2000; // karakter per pesan
-export const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024; // setelah di-decode
+export const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024; // per file, setelah di-decode
+export const MAX_ATTACHMENTS = 3;
+export const MAX_TOTAL_BYTES = 12 * 1024 * 1024;
 
 export type Kind = (typeof KINDS)[number];
 export type Repeat = (typeof REPEATS)[number];
@@ -15,7 +17,7 @@ export type AttachmentType = (typeof ATTACHMENT_TYPES)[number];
 
 export type ChatTurn = { role: "user" | "assistant"; text: string };
 export type Attachment = { media_type: AttachmentType; data: string; name: string };
-export type ChatRequest = { history: ChatTurn[]; message: string; attachment: Attachment | null };
+export type ChatRequest = { history: ChatTurn[]; message: string; attachments: Attachment[] };
 
 export type ItemDraft = {
   kind: Kind;
@@ -56,28 +58,36 @@ export function parseChatRequest(body: unknown): ChatRequest {
   // Riwayat untuk API harus dimulai dari pesan user
   while (history.length && history[0].role !== "user") history.shift();
 
-  let attachment: Attachment | null = null;
-  if (body.attachment != null) {
-    const a = body.attachment;
-    if (!isObj(a)) throw new ValidationError("Lampiran tidak valid");
-    if (!ATTACHMENT_TYPES.includes(a.media_type as AttachmentType)) {
-      throw new ValidationError("Jenis file harus JPG, PNG, WEBP, HEIC, atau PDF");
-    }
-    if (typeof a.data !== "string" || !/^[A-Za-z0-9+/]+={0,2}$/.test(a.data)) {
-      throw new ValidationError("Isi lampiran harus base64");
-    }
-    if (Math.floor((a.data.length * 3) / 4) > MAX_ATTACHMENT_BYTES) {
-      throw new ValidationError("Lampiran maksimal 5 MB");
-    }
-    attachment = {
-      media_type: a.media_type as AttachmentType,
-      data: a.data,
-      name: typeof a.name === "string" ? a.name.slice(0, 100) : "lampiran",
-    };
-  }
+  // Lampiran: `attachments` (array, maks 3) atau `attachment` (satu, format lama)
+  const rawList = Array.isArray(body.attachments)
+    ? body.attachments
+    : body.attachment != null ? [body.attachment] : [];
+  if (rawList.length > MAX_ATTACHMENTS) throw new ValidationError(`Maksimal ${MAX_ATTACHMENTS} file sekaligus`);
 
-  if (!message && !attachment) throw new ValidationError("Pesan kosong");
-  return { history, message, attachment };
+  const attachments: Attachment[] = rawList.map(parseAttachment);
+  const total = attachments.reduce((n, a) => n + Math.floor((a.data.length * 3) / 4), 0);
+  if (total > MAX_TOTAL_BYTES) throw new ValidationError("Total ukuran file maksimal 12 MB");
+
+  if (!message && attachments.length === 0) throw new ValidationError("Pesan kosong");
+  return { history, message, attachments };
+}
+
+function parseAttachment(a: unknown): Attachment {
+  if (!isObj(a)) throw new ValidationError("Lampiran tidak valid");
+  if (!ATTACHMENT_TYPES.includes(a.media_type as AttachmentType)) {
+    throw new ValidationError("Jenis file harus JPG, PNG, WEBP, HEIC, atau PDF");
+  }
+  if (typeof a.data !== "string" || !/^[A-Za-z0-9+/]+={0,2}$/.test(a.data)) {
+    throw new ValidationError("Isi lampiran harus base64");
+  }
+  if (Math.floor((a.data.length * 3) / 4) > MAX_ATTACHMENT_BYTES) {
+    throw new ValidationError("Satu file maksimal 5 MB");
+  }
+  return {
+    media_type: a.media_type as AttachmentType,
+    data: a.data,
+    name: typeof a.name === "string" ? a.name.slice(0, 100) : "lampiran",
+  };
 }
 
 function cleanText(v: unknown, max: number): string | null {

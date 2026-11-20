@@ -77,9 +77,10 @@ export async function prepareAttachment(file) {
 }
 
 /** Kirim pesan ke asisten. Mengembalikan { reply, proposals, remaining }. */
-export async function sendChat({ history, message, attachment }) {
+export async function sendChat({ history, message, attachment = null, attachments = null }) {
+  const list = attachments ?? (attachment ? [attachment] : []);
   const { data, error } = await supabase.functions.invoke("chat", {
-    body: { history, message, attachment },
+    body: { history, message, attachments: list },
   });
   if (error) {
     // FunctionsHttpError membawa Response asli; ambil pesan error dari server kalau ada

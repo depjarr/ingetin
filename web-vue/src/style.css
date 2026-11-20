@@ -740,3 +740,16 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.32); }
 /* Tautan ganti Masuk ↔ Daftar di bawah form */
 .auth-switch { text-align: center; font-size: 16px; color: var(--label2); padding-top: 6px; border-top: 0.5px solid var(--sep); }
 .auth-switch button { border: 0; background: none; padding: 10px 4px; min-height: 44px; font: 600 16px var(--font); color: var(--blue); cursor: pointer; }
+
+/* Scan: status file siap + pesan error per file */
+.bar-fill.ready { background: var(--blue); }
+.file-ready { color: #248A3D; font-weight: 600; }
+.file-reply.err { color: #D70015; }
+.tile { overflow: visible; }
+.tile-ok {
+  position: absolute; top: -6px; right: -6px; width: 22px; height: 22px; border-radius: 50%;
+  display: grid; place-items: center; background: var(--green); color: #fff;
+  border: 2px solid #fff; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+.scan-reply { display: flex; gap: 8px; align-items: flex-start; font-size: 15px; color: var(--label2); background: var(--cell); border-radius: var(--r-cell); padding: 12px 14px; }
+.scan-reply svg { flex-shrink: 0; margin-top: 2px; color: #AF52DE; }

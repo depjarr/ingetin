@@ -44,12 +44,12 @@ function tileFor(type) {
 const title = computed(() => {
   if (dragging.value) return "Lepas untuk menambahkan";
   switch (phase.value) {
-    case "picked": return `${files.value.length} file siap dibaca`;
+    case "picked": return preparing.value ? "Menyiapkan file…" : `${files.value.length} file siap dibaca`;
     case "reading": return `Membaca ${files.value.length} dokumen`;
     case "done":
       if (proposals.value.length) return `${proposals.value.length} pengingat siap disimpan`;
       return "Tanggal belum terbaca";
-    case "error": return failed.value.length === files.value.length ? "Dokumen gagal dibaca" : `${failed.value.length} file gagal dibaca`;
+    case "error": return "Dokumen belum terbaca";
     default: return "Scan dokumen";
   }
 });
@@ -60,7 +60,7 @@ const subtitle = computed(() => {
     case "picked": return `${sizeLabel(totalSize.value)} total. Tambahkan keterangan kalau perlu.`;
     case "reading": return `${STEPS[step.value]}…`;
     case "done": return proposals.value.length ? "Cek tanggalnya, lalu simpan." : "Lihat pesan asisten di bawah, atau coba foto yang lebih jelas.";
-    case "error": return failed.value[0]?.error ?? "";
+    case "error": return `${failed.value[0]?.error ?? ""} Tekan “Coba lagi”.`;
     default: return "Foto STNK, SIM, paspor, atau tagihan. Tanggalnya dibaca otomatis.";
   }
 });
@@ -80,24 +80,30 @@ async function addFiles(list) {
   pickError.value = "";
   const incoming = [...list].slice(0, MAX_FILES - files.value.length);
   if (list.length > incoming.length) pickError.value = `Maksimal ${MAX_FILES} file sekaligus.`;
+  if (incoming.length) phase.value = "picked";
   for (const file of incoming) {
+    // Baris muncul dulu dengan status "Menyiapkan", lalu jadi "Siap" (bar penuh + centang)
+    files.value.push({
+      id: crypto.randomUUID(),
+      name: file.name,
+      size: file.size,
+      ...tileFor(file.type),
+      status: "preparing",
+      error: "",
+      payload: null,
+    });
+    const f = files.value[files.value.length - 1]; // versi reaktif
     try {
-      const payload = await prepareAttachment(file);
-      files.value.push({
-        id: crypto.randomUUID(),
-        name: file.name,
-        size: Math.round((payload.data.length * 3) / 4),
-        ...tileFor(file.type),
-        status: "waiting",
-        error: "",
-        reply: "",
-        payload,
-      });
+      const [payload] = await Promise.all([prepareAttachment(file), new Promise((r) => setTimeout(r, 450))]);
+      f.payload = payload;
+      f.size = Math.round((payload.data.length * 3) / 4);
+      f.status = "ready";
     } catch (err) {
-      pickError.value = err.message;
+      pickError.value = `${file.name}: ${err.message}`;
+      files.value = files.value.filter((x) => x.id !== f.id);
     }
   }
-  if (files.value.length) phase.value = "picked";
+  if (!files.value.length) phase.value = "idle";
 }
 
 function onPick(e) {
@@ -127,46 +133,49 @@ function onDrop(e) {
   if (e.dataTransfer?.files?.length) addFiles(e.dataTransfer.files);
 }
 
-async function readOne(f) {
-  f.status = "reading";
-  f.error = "";
+const preparing = computed(() => files.value.some((f) => f.status === "preparing"));
+const reply = ref("");
+
+/** Semua file dikirim dalam SATU permintaan: lebih cepat & tidak kena batas per menit Gemini. */
+async function readAll() {
+  const batch = files.value.filter((f) => f.status !== "done");
+  for (const f of batch) { f.status = "reading"; f.error = ""; }
   try {
+    const attachments = batch.map((f) => f.payload).filter(Boolean);
     const res = await sendChat({
       history: [],
-      message: note.value.trim() || (f.payload ? "" : "Buatkan pengingat dari keterangan ini."),
-      attachment: f.payload,
+      message: note.value.trim() || (attachments.length ? "" : "Buatkan pengingat dari keterangan ini."),
+      attachments,
     });
-    f.reply = res.reply || "";
-    const got = (res.proposals || []).map((p) => ({ ...p, status: null, source: f.id }));
-    proposals.value.push(...got);
-    f.status = "done";
+    reply.value = res.reply || "";
+    proposals.value.push(...(res.proposals || []).map((p) => ({ ...p, status: null })));
+    for (const f of batch) f.status = "done";
   } catch (err) {
-    f.status = "failed";
-    f.error = err.message;
+    for (const f of batch) { f.status = "failed"; f.error = err.message; }
   }
 }
 
 async function start() {
   // Tanpa file tapi ada keterangan → jadikan "kartu teks"
   if (!files.value.length && note.value.trim()) {
-    files.value.push({ id: crypto.randomUUID(), name: "Keterangan", size: note.value.length, label: "Teks", tone: "note", status: "waiting", error: "", reply: "", payload: null });
+    files.value.push({ id: crypto.randomUUID(), name: "Keterangan", size: note.value.length, label: "Teks", tone: "note", status: "ready", error: "", payload: null });
   }
-  if (!files.value.length) return;
+  if (!files.value.length || preparing.value) return;
 
   phase.value = "reading";
   step.value = 0;
   clearInterval(stepTimer);
   stepTimer = setInterval(() => { step.value = (step.value + 1) % STEPS.length; }, 1600);
 
-  for (const f of files.value) if (f.status !== "done") await readOne(f);
+  await readAll();
 
   clearInterval(stepTimer);
   phase.value = failed.value.length ? "error" : "done";
 }
 
-async function retry(f) {
+async function retry() {
   phase.value = "reading";
-  await readOne(f);
+  await readAll();
   phase.value = failed.value.length ? "error" : "done";
 }
 
@@ -194,6 +203,7 @@ function reset() {
   phase.value = "idle";
   files.value = [];
   proposals.value = [];
+  reply.value = "";
   note.value = "";
   pickError.value = "";
   dragging.value = false;
@@ -264,6 +274,13 @@ const shake = computed(() => (phase.value === "error" ? { x: [0, -10, 9, -6, 4, 
             <span class="tile-fold" />
             <AppIcon :name="f.tone === 'note' ? 'pencil' : f.tone === 'pdf' ? 'file' : 'camera'" :size="18" />
             <span class="tile-label">{{ f.label }}</span>
+            <motion.span
+              v-if="f.status === 'ready'"
+              class="tile-ok"
+              :initial="{ scale: 0 }"
+              :animate="{ scale: [0, 1.3, 1] }"
+              :transition="{ duration: 0.4, delay: 0.1 }"
+            ><AppIcon name="check" :size="12" /></motion.span>
           </motion.div>
         </AnimatePresence>
 
@@ -338,15 +355,23 @@ const shake = computed(() => (phase.value === "error" ? { x: [0, -10, 9, -6, 4, 
               <div class="file-top">
                 <span class="file-name">{{ f.name }}</span>
                 <span class="file-meta" :class="{ err: f.status === 'failed' }">
-                  <template v-if="f.status === 'waiting'">{{ phase === 'reading' ? 'Menunggu' : sizeLabel(f.size) }}</template>
-                  <template v-else-if="f.status === 'reading'">Membaca</template>
+                  <template v-if="f.status === 'preparing'">Menyiapkan…</template>
+                  <span v-else-if="f.status === 'ready'" class="file-ready">{{ sizeLabel(f.size) }} · Siap</span>
+                  <template v-else-if="f.status === 'reading'">Membaca…</template>
                   <template v-else-if="f.status === 'done'">Selesai</template>
                   <template v-else>Gagal</template>
                 </span>
               </div>
               <div class="bar" :class="f.status">
                 <motion.span
-                  v-if="f.status === 'reading'"
+                  v-if="f.status === 'preparing' || f.status === 'ready'"
+                  class="bar-fill ready"
+                  :initial="{ scaleX: 0 }"
+                  :animate="{ scaleX: f.status === 'ready' ? 1 : 0.7 }"
+                  :transition="{ duration: f.status === 'ready' ? 0.3 : 0.45, ease: 'easeOut' }"
+                />
+                <motion.span
+                  v-else-if="f.status === 'reading'"
                   class="bar-run"
                   :initial="{ x: '-100%' }"
                   :animate="{ x: '260%' }"
@@ -360,14 +385,30 @@ const shake = computed(() => (phase.value === "error" ? { x: [0, -10, 9, -6, 4, 
                   :transition="{ duration: 0.35 }"
                 />
               </div>
-              <p v-if="f.reply && f.status === 'done'" class="file-reply">{{ f.reply }}</p>
+              <p v-if="f.status === 'failed' && f.error" class="file-reply err">{{ f.error }}</p>
             </div>
-            <button v-if="f.status === 'failed'" class="icon-btn small" aria-label="Coba lagi" @click="retry(f)"><AppIcon name="retry" :size="16" /></button>
-            <button v-else-if="phase === 'picked'" class="icon-btn small" :aria-label="`Hapus ${f.name}`" @click="removeFile(f.id)"><AppIcon name="x" :size="16" /></button>
-            <span v-else-if="f.status === 'done'" class="file-ok" aria-hidden="true"><AppIcon name="check" :size="14" /></span>
+            <motion.span
+              v-if="f.status === 'ready' || f.status === 'done'"
+              :key="`ok-${f.status}`"
+              class="file-ok"
+              aria-hidden="true"
+              :initial="{ scale: 0, rotate: -45 }"
+              :animate="{ scale: [0, 1.25, 1], rotate: 0 }"
+              :transition="{ duration: 0.4, ease: 'easeOut' }"
+            ><AppIcon name="check" :size="14" /></motion.span>
+            <button v-if="phase === 'picked' && f.status !== 'preparing'" class="icon-btn small" :aria-label="`Hapus ${f.name}`" @click="removeFile(f.id)"><AppIcon name="x" :size="16" /></button>
           </motion.li>
         </AnimatePresence>
       </ul>
+
+      <p v-if="reply && (phase === 'done' || phase === 'error')" class="scan-reply"><AppIcon name="spark" :size="16" /> {{ reply }}</p>
+      <motion.button
+        v-if="phase === 'error'"
+        class="btn primary wide"
+        :initial="{ opacity: 0, y: 6 }"
+        :animate="{ opacity: 1, y: 0 }"
+        @click="retry"
+      ><AppIcon name="retry" :size="18" /> Coba lagi</motion.button>
 
       <!-- Keterangan -->
       <div v-if="phase === 'idle' || phase === 'picked'" class="scan-note">
@@ -379,7 +420,7 @@ const shake = computed(() => (phase.value === "error" ? { x: [0, -10, 9, -6, 4, 
           maxlength="500"
           :placeholder="files.length ? 'Mis. STNK motor istri, bayar di Samsat Bekasi' : 'Mis. pajak motor jatuh tempo 12 Maret 2027'"
         ></textarea>
-        <button class="btn primary wide" :disabled="!files.length && !note.trim()" @click="start">
+        <button class="btn primary wide" :disabled="preparing || (!files.length && !note.trim())" @click="start">
           <AppIcon name="spark" :size="18" /> {{ files.length ? 'Baca dokumen' : 'Buat pengingat' }}
         </button>
       </div>

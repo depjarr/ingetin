@@ -16,3 +16,6 @@ supabase/.branches/
 .DS_Store
 Thumbs.db
 *.log
+
+# Pengaturan lokal editor/asisten
+.claude/

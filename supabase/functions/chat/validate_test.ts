@@ -35,12 +35,12 @@ Deno.test("parseChatRequest: riwayat dipotong, dibersihkan, dan dimulai dari use
   assertEquals(req.history.length <= MAX_HISTORY, true);
   assertEquals(req.history[0].role, "user");
   assertEquals(req.history.some((t) => (t.role as string) === "system"), false);
-  assertEquals(req.attachment, null);
+  assertEquals(req.attachments, []);
 });
 
 Deno.test("parseChatRequest: lampiran divalidasi", () => {
   const ok = parseChatRequest({ message: "", attachment: { media_type: "image/jpeg", data: "aGFsbw==", name: "stnk.jpg" } });
-  assertEquals(ok.attachment?.media_type, "image/jpeg");
+  assertEquals(ok.attachments[0].media_type, "image/jpeg");
 
   assertThrows(() => parseChatRequest({ message: "x", attachment: { media_type: "text/html", data: "aGFsbw==" } }), ValidationError);
   assertThrows(() => parseChatRequest({ message: "x", attachment: { media_type: "image/png", data: "<script>" } }), ValidationError);
@@ -88,4 +88,13 @@ Deno.test("validateChanges: hanya field yang diisi", () => {
   );
   assertThrows(() => validateChanges({ name: null, due_date: null }), ValidationError);
   assertThrows(() => validateChanges({ due_date: "besok" }), ValidationError);
+});
+
+Deno.test("parseChatRequest: beberapa file sekaligus", () => {
+  const file = (name: string) => ({ media_type: "image/jpeg", data: "aGFsbw==", name });
+  const req = parseChatRequest({ message: "", attachments: [file("a.jpg"), file("b.jpg"), file("c.jpg")] });
+  assertEquals(req.attachments.map((a) => a.name), ["a.jpg", "b.jpg", "c.jpg"]);
+  assertThrows(() => parseChatRequest({ message: "", attachments: [file("a"), file("b"), file("c"), file("d")] }), ValidationError);
+  const big = { media_type: "application/pdf", data: "A".repeat(6_400_000), name: "x.pdf" }; // ±4,8 MB per file
+  assertThrows(() => parseChatRequest({ message: "", attachments: [big, big, big] }), ValidationError); // > 12 MB total
 });
