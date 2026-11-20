@@ -95,27 +95,32 @@ function onPanelDragEnd(_e, info) {
         role="dialog"
         aria-modal="true"
         aria-label="Notifikasi"
-        :initial="{ y: '-100%' }"
-        :animate="{ y: 0 }"
-        :exit="{ y: '-100%' }"
-        :transition="{ type: 'spring', stiffness: 320, damping: 34 }"
+        :initial="{ opacity: 1 }"
+        :animate="{ opacity: 1 }"
+        :exit="{ opacity: 0, y: -40, transition: { duration: 0.2 } }"
         drag="y"
         :drag-constraints="{ top: 0, bottom: 0 }"
         :drag-elastic="{ top: 0.5, bottom: 0.05 }"
         @drag-end="onPanelDragEnd"
       >
-        <header class="nc-head">
+        <motion.header
+          class="nc-head"
+          :initial="{ y: -60, opacity: 0 }"
+          :animate="{ y: 0, opacity: 1 }"
+          :transition="{ type: 'spring', stiffness: 420, damping: 32 }"
+        >
           <h2>Notifikasi</h2>
           <button class="nc-close" @click="close">Tutup</button>
-        </header>
+        </motion.header>
 
+        <!-- Kartu-kartu mengambang, turun satu per satu dari atas seperti notifikasi iPhone -->
         <div class="nc-list">
           <motion.div
             v-if="push"
             class="nc-card"
-            :initial="{ y: -16, opacity: 0, scale: 0.96 }"
+            :initial="{ y: -80, opacity: 0, scale: 0.92 }"
             :animate="{ y: 0, opacity: 1, scale: 1 }"
-            :transition="{ type: 'spring', stiffness: 380, damping: 28, delay: 0.08 }"
+            :transition="{ type: 'spring', stiffness: 420, damping: 30, delay: 0.06 }"
           >
             <span class="app-glyph" :style="{ background: pushState === 'on' ? '#34C759' : '#8E8E93' }"><AppIcon name="bell" :size="18" /></span>
             <span class="nc-text">
@@ -129,9 +134,9 @@ function onPanelDragEnd(_e, info) {
             v-for="(n, i) in notes"
             :key="n.id"
             class="nc-card"
-            :initial="{ y: -16, opacity: 0, scale: 0.96 }"
+            :initial="{ y: -80, opacity: 0, scale: 0.92 }"
             :animate="{ y: 0, opacity: 1, scale: 1 }"
-            :transition="{ type: 'spring', stiffness: 380, damping: 28, delay: 0.12 + i * 0.05 }"
+            :transition="{ type: 'spring', stiffness: 420, damping: 30, delay: 0.12 + i * 0.06 }"
             @click="emit('open-item', n); close()"
           >
             <span class="app-glyph" :style="{ background: n.cat.color }"><AppIcon :name="n.cat.icon" :size="18" /></span>
@@ -142,9 +147,20 @@ function onPanelDragEnd(_e, info) {
             </span>
           </motion.button>
 
-          <p v-if="!notes.length" class="nc-empty">Tidak ada yang jatuh tempo dalam 7 hari. Santai dulu.</p>
+          <motion.div
+            v-if="!notes.length"
+            class="nc-card"
+            :initial="{ y: -80, opacity: 0, scale: 0.92 }"
+            :animate="{ y: 0, opacity: 1, scale: 1 }"
+            :transition="{ type: 'spring', stiffness: 420, damping: 30, delay: 0.14 }"
+          >
+            <span class="app-glyph" style="background: #34C759"><AppIcon name="check" :size="18" /></span>
+            <span class="nc-text">
+              <strong>Semua aman</strong>
+              <span>Tidak ada yang jatuh tempo dalam 7 hari. Santai dulu.</span>
+            </span>
+          </motion.div>
         </div>
-        <div class="nc-grabber" aria-hidden="true" />
       </motion.section>
     </AnimatePresence>
   </Teleport>

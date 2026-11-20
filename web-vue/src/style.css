@@ -315,8 +315,8 @@ textarea { resize: vertical; }
 }
 .banner-ios {
   pointer-events: auto; border-radius: 22px; touch-action: none;
-  background: rgba(245, 245, 247, 0.82); backdrop-filter: blur(30px) saturate(1.8); -webkit-backdrop-filter: blur(30px) saturate(1.8);
-  box-shadow: 0 10px 40px -8px rgba(0, 0, 0, 0.3), 0 0 0 0.5px rgba(0, 0, 0, 0.06);
+  background: rgba(250, 250, 252, 0.97); backdrop-filter: blur(30px) saturate(1.8); -webkit-backdrop-filter: blur(30px) saturate(1.8);
+  box-shadow: 0 12px 36px -8px rgba(0, 0, 0, 0.35), 0 0 0 0.5px rgba(0, 0, 0, 0.08);
 }
 .banner-hit { width: 100%; display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border: 0; background: none; text-align: left; cursor: pointer; font: inherit; color: var(--label); }
 .banner-hit .app-glyph { width: 38px; height: 38px; border-radius: 10px; }
@@ -360,21 +360,29 @@ textarea { resize: vertical; }
 .as-cancel { justify-content: center; border-radius: 14px; background: var(--cell); font-weight: 600; min-height: 56px; color: var(--blue); }
 
 /* ---------- Pusat notifikasi ---------- */
+/* Kartu putih SOLID yang mengambang (tidak bergantung pada efek blur, yang tidak didukung semua browser) */
 
-.nc-backdrop { position: fixed; inset: 0; z-index: 60; background: rgba(0, 0, 0, 0.2); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+.nc-backdrop { position: fixed; inset: 0; z-index: 60; background: rgba(0, 0, 0, 0.4); }
 .nc {
-  position: fixed; z-index: 61; top: 0; left: 0; right: 0; margin: 0 auto; width: min(560px, 100%);
-  max-height: 88dvh; overflow-y: auto; touch-action: pan-y;
-  padding: max(16px, env(safe-area-inset-top)) 12px 10px; border-radius: 0 0 28px 28px; background: rgba(242, 242, 247, 0.6);
+  position: fixed; z-index: 61; top: 0; left: 0; right: 0; margin: 0 auto; width: min(460px, 100%);
+  max-height: 100dvh; overflow-y: auto; touch-action: pan-y;
+  padding: max(12px, env(safe-area-inset-top)) 10px 16px;
+  display: flex; flex-direction: column; gap: 8px; pointer-events: none;
 }
-.nc-head { display: flex; justify-content: space-between; align-items: center; padding: 6px 6px 12px; }
-.nc-head h2 { font: 700 28px var(--font-display); letter-spacing: -0.02em; }
-.nc-close { border: 0; background: var(--fill2); color: var(--label); border-radius: 16px; min-height: 32px; padding: 0 14px; font: 600 15px var(--font); cursor: pointer; }
+.nc > * { pointer-events: auto; }
+.nc-head {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 8px 8px 16px; border-radius: 18px; background: var(--cell);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.45);
+}
+.nc-head h2 { font: 700 20px var(--font-display); letter-spacing: -0.02em; }
+.nc-close { border: 0; background: var(--fill); color: var(--label); border-radius: 16px; min-height: 34px; padding: 0 14px; font: 600 15px var(--font); cursor: pointer; }
 .nc-list { display: flex; flex-direction: column; gap: 8px; }
 .nc-card {
   display: flex; gap: 12px; align-items: flex-start; width: 100%; padding: 12px 14px;
   border: 0; border-radius: 20px; text-align: left; font: inherit; color: var(--label); cursor: pointer;
-  background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); box-shadow: 0 4px 16px -8px rgba(0, 0, 0, 0.2);
+  background: var(--cell);
+  box-shadow: 0 12px 32px -10px rgba(0, 0, 0, 0.5), 0 0 0 0.5px rgba(0, 0, 0, 0.06);
 }
 .nc-card .app-glyph { width: 38px; height: 38px; border-radius: 10px; }
 .nc-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; font-size: 15px; line-height: 1.3; }
@@ -382,8 +390,6 @@ textarea { resize: vertical; }
 .nc-meta { display: flex; justify-content: space-between; font-size: 13px; color: var(--label2); }
 .nc-meta .hot { color: var(--red); font-weight: 600; }
 .nc-action { align-self: flex-start; margin-top: 8px; min-height: 34px; padding: 0 14px; border: 0; border-radius: 17px; background: var(--blue); color: #fff; font: 600 14px var(--font); cursor: pointer; }
-.nc-empty { text-align: center; color: var(--label2); padding: 18px; font-size: 15px; }
-.nc-grabber { width: 40px; height: 5px; border-radius: 3px; background: var(--label3); margin: 12px auto 0; }
 
 /* ---------- Sheet bawah (scan) ---------- */
 
@@ -753,3 +759,25 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.32); }
 }
 .scan-reply { display: flex; gap: 8px; align-items: flex-start; font-size: 15px; color: var(--label2); background: var(--cell); border-radius: var(--r-cell); padding: 12px 14px; }
 .scan-reply svg { flex-shrink: 0; margin-top: 2px; color: #AF52DE; }
+
+/* ---------- Notifikasi versi ringkas (menimpa ukuran di atas) ---------- */
+.nc { width: min(400px, 100%); gap: 6px; padding-left: 8px; padding-right: 8px; }
+.nc-list { gap: 6px; }
+.nc-head { padding: 5px 5px 5px 14px; border-radius: 16px; }
+.nc-head h2 { font-size: 16px; font-weight: 600; letter-spacing: -0.01em; }
+.nc-close { min-height: 28px; padding: 0 12px; font-size: 13px; border-radius: 14px; }
+.nc-card { gap: 10px; padding: 9px 12px; border-radius: 18px; }
+.nc-card .app-glyph { width: 30px; height: 30px; border-radius: 8px; }
+.nc-card .app-glyph svg { width: 16px; height: 16px; }
+.nc-text { font-size: 13.5px; line-height: 1.3; }
+.nc-text strong { font-size: 14px; }
+.nc-meta { font-size: 11.5px; }
+.nc-action { margin-top: 6px; min-height: 28px; padding: 0 12px; font-size: 13px; border-radius: 14px; }
+
+.banners { width: min(380px, calc(100% - 16px)); gap: 6px; }
+.banner-ios { border-radius: 18px; }
+.banner-hit { gap: 10px; padding: 9px 12px; }
+.banner-hit .app-glyph { width: 30px; height: 30px; border-radius: 8px; }
+.banner-hit .app-glyph svg { width: 16px; height: 16px; }
+.banner-text { font-size: 13.5px; line-height: 1.3; }
+.banner-top { font-size: 11.5px; }
