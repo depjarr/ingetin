@@ -1,0 +1,18 @@
+# Dependensi & hasil build
+node_modules/
+dist/
+
+# Rahasia: JANGAN di-commit
+.env
+.env.*
+!.env.example
+
+# File lokal Supabase CLI (berisi info project hasil `supabase link`)
+supabase/.temp/
+supabase/.branches/
+
+# Lain-lain
+.vercel/
+.DS_Store
+Thumbs.db
+*.log

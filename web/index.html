@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Ingetin</title>
+  <meta name="theme-color" content="#2448C7">
+  <link rel="manifest" href="./manifest.json">
+  <!-- Wajib untuk iPhone: ikon & mode layar penuh saat ditambahkan ke Layar Utama -->
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Ingetin">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="stylesheet" href="./style.css">
+  <script type="module" src="./app.js"></script>
+</head>
+<body>
+  <main class="wrap">
+
+    <!-- ===== Login / Daftar ===== -->
+    <section id="auth-view" hidden>
+      <h1 class="brand">Ingetin</h1>
+      <p class="muted">Pengingat masa berlaku dokumen &amp; tagihan.</p>
+      <form id="auth-form" class="card stack">
+        <label for="email">Email</label>
+        <input id="email" type="email" autocomplete="email" required>
+        <label for="password">Password</label>
+        <input id="password" type="password" autocomplete="current-password" minlength="6" required>
+        <div class="row">
+          <button type="submit" value="login" class="btn primary">Masuk</button>
+          <button type="submit" value="signup" class="btn">Daftar</button>
+        </div>
+        <p id="auth-msg" class="msg" role="status"></p>
+      </form>
+    </section>
+
+    <!-- ===== Aplikasi ===== -->
+    <section id="app-view" hidden>
+      <header class="topbar">
+        <h1 class="brand">Ingetin</h1>
+        <button id="btn-logout" class="btn small">Keluar</button>
+      </header>
+
+      <div id="notif-box" class="card notif">
+        <p id="notif-text"></p>
+        <div class="row">
+          <button id="btn-enable" class="btn primary" hidden>Aktifkan notifikasi</button>
+          <button id="btn-test" class="btn" hidden>Tes notifikasi</button>
+          <button id="btn-disable" class="btn" hidden>Matikan</button>
+        </div>
+      </div>
+
+      <div class="section-head">
+        <h2>Pengingat kamu</h2>
+        <button id="btn-add" class="btn primary small">+ Tambah</button>
+      </div>
+      <p id="list-msg" class="msg" role="status"></p>
+      <ul id="items" class="list"></ul>
+    </section>
+  </main>
+
+  <!-- ===== Form tambah ===== -->
+  <dialog id="add-dialog">
+    <form id="add-form" class="stack" method="dialog">
+      <h2>Tambah pengingat</h2>
+
+      <fieldset class="seg">
+        <legend>Jenis</legend>
+        <label><input type="radio" name="kind" value="dokumen" checked> Dokumen</label>
+        <label><input type="radio" name="kind" value="tagihan"> Tagihan</label>
+      </fieldset>
+
+      <label for="f-name">Nama</label>
+      <input id="f-name" name="name" maxlength="100" placeholder="Contoh: STNK Motor" required>
+
+      <label for="f-date" id="f-date-label">Berlaku sampai</label>
+      <input id="f-date" name="due_date" type="date" required>
+
+      <div id="amount-wrap" hidden class="stack">
+        <label for="f-amount">Nominal (opsional)</label>
+        <input id="f-amount" name="amount" type="number" min="0" step="1000" inputmode="numeric" placeholder="450000">
+      </div>
+
+      <label for="f-repeat">Berulang</label>
+      <select id="f-repeat" name="repeat">
+        <option value="none">Sekali</option>
+        <option value="monthly">Bulanan</option>
+        <option value="yearly" selected>Tahunan</option>
+        <option value="5yearly">5 tahunan</option>
+      </select>
+
+      <fieldset class="chips">
+        <legend>Ingatkan saya</legend>
+        <label><input type="checkbox" name="remind" value="30" checked> H-30</label>
+        <label><input type="checkbox" name="remind" value="7" checked> H-7</label>
+        <label><input type="checkbox" name="remind" value="1" checked> H-1</label>
+        <label><input type="checkbox" name="remind" value="0"> Hari H</label>
+      </fieldset>
+
+      <label for="f-note">Catatan</label>
+      <textarea id="f-note" name="note" rows="2" maxlength="500" placeholder="Misal: syarat yang perlu dibawa"></textarea>
+
+      <p id="add-msg" class="msg" role="status"></p>
+      <div class="row">
+        <button type="button" id="btn-cancel" class="btn">Batal</button>
+        <button type="submit" value="save" class="btn primary">Simpan</button>
+      </div>
+    </form>
+  </dialog>
+</body>
+</html>
